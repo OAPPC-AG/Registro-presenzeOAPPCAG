@@ -537,6 +537,9 @@
       btnOut.disabled = uscitaGiaFatta;
     }
   }
+  const LOG_KEY = 'presenze_log_' + EVENTO_DATA.replace(/\//g, '-');
+  let log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+
   aggiornaStatoBottoni();
   setInterval(aggiornaStatoBottoni, 60000);
 
@@ -698,8 +701,6 @@
 
   rilevaPosizione();
 
-  const LOG_KEY = 'presenze_log_' + EVENTO_DATA.replace(/\//g, '-');
-  let log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
   renderLog();
 
   function now() {
