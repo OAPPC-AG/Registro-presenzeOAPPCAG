@@ -532,7 +532,9 @@
     } else {
       // Ingresso solo fino alla fine evento, uscita fino al limite
       btnIn.disabled  = orarioAttualeInMinuti() >= orarioInMinuti(EVENTO_FINE);
-      btnOut.disabled = false;
+      // Non riabilitare btnOut se l'uscita è già stata registrata
+      const uscitaGiaFatta = log.some(e => e.tipo === 'uscita');
+      btnOut.disabled = uscitaGiaFatta;
     }
   }
   aggiornaStatoBottoni();
@@ -696,7 +698,8 @@
 
   rilevaPosizione();
 
-  let log = JSON.parse(localStorage.getItem('presenze_log') || '[]');
+  const LOG_KEY = 'presenze_log_' + EVENTO_DATA.replace(/\//g, '-');
+  let log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
   renderLog();
 
   function now() {
@@ -786,7 +789,7 @@
         await fetch(SCRIPT_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
       }
       log.push(entry);
-      localStorage.setItem('presenze_log', JSON.stringify(log));
+      localStorage.setItem(LOG_KEY, JSON.stringify(log));
       renderLog();
       // Salva dati e blocca dispositivo dopo l'ingresso
       salvaDati(nome, cognome, cf, iscrizione);
