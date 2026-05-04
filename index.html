@@ -409,6 +409,11 @@
       <input class="input-field" id="iscrizioneInput" type="text" placeholder="N. iscrizione all'ordine *" autocomplete="off" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
 
 
+      <label class="remember-label" id="rememberLabel">
+        <input type="checkbox" id="rememberCheck">
+        Ricorda i miei dati per i prossimi eventi
+      </label>
+
       <div class="gps-status idle" id="gpsStatus">
         <div class="dot"></div>
         <span id="gpsText">Posizione non ancora rilevata</span>
@@ -534,8 +539,9 @@
   setInterval(aggiornaStatoBottoni, 60000);
 
   // ── Gestione blocco dispositivo ──
-  const SAVED_KEY  = 'oap_dati_personali';
-  const LOCKED_KEY = 'oap_dispositivo_bloccato';
+  const SAVED_KEY    = 'oap_dati_personali';
+  const LOCKED_KEY   = 'oap_dispositivo_bloccato';
+  const REMEMBER_KEY = 'oap_ricorda_dati';
 
   // Chiave del giorno corrente — il blocco scade automaticamente a mezzanotte
   function chiaveGiorno() {
@@ -713,6 +719,12 @@
   }
 
   async function registra(tipo) {
+    // Impedisci doppia uscita
+    if (tipo === 'uscita' && log.some(e => e.tipo === 'uscita')) {
+      showToast('Uscita già registrata', 'error');
+      document.getElementById('btnOut').disabled = true;
+      return;
+    }
     if (isPrimaApertura()) {
       showToast('Le firme aprono alle ' + ORARIO_APERTURA, 'error');
       return;
@@ -784,6 +796,7 @@
         setTimeout(() => mostraBlocco(nome, cognome), 1200);
       } else {
         showToast('Uscita registrata ✓', 'success');
+        document.getElementById('btnOut').disabled = true;
         document.getElementById('nomeInput').value       = '';
         document.getElementById('cognomeInput').value    = '';
         document.getElementById('cfInput').value         = '';
