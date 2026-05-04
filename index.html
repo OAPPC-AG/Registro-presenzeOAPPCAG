@@ -719,7 +719,7 @@
       return;
     }
     if (tipo === 'ingresso' && orarioAttualeInMinuti() >= orarioInMinuti(EVENTO_FINE)) {
-      showToast('Non è più possibile registrare l'ingresso', 'error');
+      showToast("Non è più possibile registrare l'ingresso", 'error');
       return;
     }
     const nome = document.getElementById('nomeInput').value.trim();
