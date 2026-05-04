@@ -482,7 +482,7 @@
   document.getElementById('evtPills').innerHTML = `
     <span class="pill">🕐 ${EVENTO_INIZIO} – ${EVENTO_FINE}</span>
     <span class="pill">⏱ ${ORE_PREVISTE}h previste</span>
-    <span class="pill warn">✅ Min. ${PERC_MINIMA}% (${oreMinime}h) per ottenere i CFP</span>
+    <span class="pill warn">✅ Min. ${PERC_MINIMA}% (${oreMinime}h) per i crediti</span>
   `;
 
   // Helpers orario
@@ -578,8 +578,11 @@
     wrap.appendChild(banner);
     // Mostra solo il pulsante Uscita e l'indicatore GPS
     document.getElementById('gpsStatus').style.display = 'flex';
-    document.getElementById('btnOut').style.display    = 'flex';
     document.getElementById('sendingIndicator').style.display = '';
+    const btnGroup = document.getElementById('btnOut').closest('.btn-group');
+    if (btnGroup) btnGroup.style.display = 'grid';
+    document.getElementById('btnIn').style.display  = 'none';
+    document.getElementById('btnOut').style.display = 'flex';
     // Riempi i campi nascosti con i dati salvati per la sottomissione
     try {
       const saved = JSON.parse(localStorage.getItem(SAVED_KEY));
