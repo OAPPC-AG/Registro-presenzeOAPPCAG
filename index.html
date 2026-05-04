@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Registro Presenze</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #f5f6fa;
+    --surface: #ffffff;
+    --surface2: #f0f2f7;
+    --border: #dde1ea;
+    --text: #1a1d2e;
+    --text2: #6b7280;
+    --text3: #adb5bd;
+    --accent: #1a56db;
+    --accent-dim: rgba(26,86,219,0.08);
+    --accent-hover: #1648c0;
+    --red: #e02424;
+    --red-dim: rgba(224,36,36,0.08);
+    --green: #057a55;
+    --green-dim: rgba(5,122,85,0.08);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 40px;
+  }
+
+  header {
+    width: 100%;
+    background: #ffffff;
+    padding: 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+
+  .header-top {
+    width: 100%;
+    background: #1a56db;
+    padding: 6px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-top span {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .header-body {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 24px;
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .logo-img {
+    height: 150px;
+    width: auto;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .header-text p {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  main {
+    width: 100%;
+    max-width: 480px;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 14px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .event-info { display: flex; flex-direction: column; gap: 6px; }
+  .event-name { font-size: 18px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .event-meta { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; }
+
+  .input-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .input-field {
+    width: 100%;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px;
+    font-size: 16px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color .2s, background .2s;
+  }
+  .input-field::placeholder { color: var(--text3); }
+  .input-field:focus { border-color: var(--accent); background: #fff; }
+
+  .gps-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    transition: all .3s;
+    font-family: 'DM Mono', monospace;
+  }
+  .gps-status.idle   { background: var(--surface2); color: var(--text2); }
+  .gps-status.loading{ background: #eff6ff; color: #3b82f6; }
+  .gps-status.ok     { background: var(--green-dim); color: var(--green); }
+  .gps-status.error  { background: var(--red-dim); color: var(--red); }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
+  .dot.pulse { animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn {
+    padding: 15px 10px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    border: none;
+    cursor: pointer;
+    transition: transform .15s, opacity .15s, background .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .35; cursor: not-allowed; }
+
+  .btn-in  { background: var(--accent); color: #fff; }
+  .btn-in:hover:not(:disabled)  { background: var(--accent-hover); }
+  .btn-out { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
+  .btn-out:hover:not(:disabled) { background: #e5e7f0; }
+
+  .timeline { display: flex; flex-direction: column; }
+  .tl-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+    animation: fadeIn .3s ease;
+  }
+  .tl-item:last-child { border-bottom: none; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+  .tl-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    margin-top: 1px;
+  }
+  .tl-icon.in  { background: var(--accent-dim); color: var(--accent); }
+  .tl-icon.out { background: var(--red-dim); color: var(--red); }
+
+  .tl-name { font-size: 14px; font-weight: 500; color: var(--text); }
+  .tl-meta { font-size: 12px; color: var(--text2); margin-top: 2px; font-family: 'DM Mono', monospace; }
+  .tl-badge {
+    margin-left: auto;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 3px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    font-weight: 500;
+  }
+  .tl-badge.in  { background: var(--accent-dim); color: var(--accent); }
+  .tl-badge.out { background: var(--red-dim); color: var(--red); }
+
+  .empty-state {
+    text-align: center;
+    padding: 24px 0 8px;
+    color: var(--text3);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--text);
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 14px;
+    color: #fff;
+    transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 99;
+    white-space: nowrap;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .toast.show    { transform: translateX(-50%) translateY(0); }
+  .toast.success { background: var(--green); }
+  .toast.error   { background: var(--red); }
+
+  .sending { display: none; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--text2); padding: 10px 0; }
+  .sending.visible { display: flex; }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  .remember-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 4px 2px;
+    user-select: none;
+  }
+  .remember-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .saved-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 11px 14px;
+    background: var(--accent-dim);
+    border-radius: 10px;
+    font-size: 13px;
+    color: var(--accent);
+  }
+  .saved-banner span { line-height: 1.4; }
+  .saved-banner button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: underline;
+    padding: 0;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .event-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+  .pill.warn { background: #fff8e6; color: #b45309; border-color: #f6d860; }
+  .pill.closed { background: var(--red-dim); color: var(--red); border-color: rgba(224,36,36,0.2); }
+
+  .privacy-notice {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    background: #f0f4ff;
+    border: 1px solid #c7d7f8;
+    border-radius: var(--radius);
+    font-size: 12px;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .privacy-notice svg {
+    flex-shrink: 0;
+    margin-top: 2px;
+    color: var(--accent);
+  }
+
+  .config-banner {
+  .config-banner {
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    font-size: 13px;
+    color: #92400e;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.6;
+  }
+
+  footer {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <span>Ordine degli Architetti PPC della Provincia di Agrigento</span>
+  </div>
+  <div class="header-body">
+    <img class="logo-img" src="https://lh3.googleusercontent.com/pw/AP1GczN7t32WYchgctWNJVaj7JOjMuJsZT6X0LomAgHOt-GoCBN9MIcZJVzgY5Pbnzfqcjt3nFbDkpjjOMCxKP4jMaukAQ_OeipE13CO5vs-RXXxMRXfZg=s200-no" alt="Logo Ordine Architetti Agrigento">
+    <div class="header-divider"></div>
+    <div class="header-text">
+      <h1>Registro Presenze</h1>
+      <p id="headerDate">—</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Config notice (solo se SCRIPT_URL non è impostato) -->
+  <div class="config-banner" id="configBanner" style="display:none">
+    ⚠ Configura prima il file: imposta EVENTO_NOME, EVENTO_DATA e SCRIPT_URL.<br>Segui le istruzioni nel file README.
+  </div>
+
+  <!-- Info evento -->
+  <div class="card">
+    <div class="card-label">Evento</div>
+    <div class="event-info">
+      <div class="event-name" id="evtName">—</div>
+      <div class="event-meta" id="evtMeta">—</div>
+      <div class="event-meta" id="evtSede">—</div>
+      <div class="event-pills" id="evtPills"></div>
+    </div>
+  </div>
+
+  <!-- Form partecipante -->
+  <div class="card">
+    <div class="card-label">La tua presenza</div>
+    <div class="input-wrap" id="input-wrap">
+      <input class="input-field" id="nomeInput" type="text" placeholder="Nome *" autocomplete="given-name" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
+      <input class="input-field" id="cognomeInput" type="text" placeholder="Cognome *" autocomplete="family-name" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
+      <input class="input-field" id="cfInput" type="text" placeholder="Codice Fiscale *" autocomplete="off" autocorrect="off" style="text-transform:uppercase" maxlength="16" oninput="this.style.borderColor='';this.style.background=''">
+      <input class="input-field" id="iscrizioneInput" type="text" placeholder="N. iscrizione all'ordine *" autocomplete="off" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
+
+
+      <div class="gps-status idle" id="gpsStatus">
+        <div class="dot"></div>
+        <span id="gpsText">Posizione non ancora rilevata</span>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn btn-in" id="btnIn" onclick="registra('ingresso')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="#0f0f0f" stroke-width="2" stroke-linecap="round"/></svg>
+          Ingresso
+        </button>
+        <button class="btn btn-out" id="btnOut" onclick="registra('uscita')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Uscita
+        </button>
+      </div>
+
+      <div class="sending" id="sendingIndicator">
+        <div class="spinner"></div>
+        <span>Invio dati in corso…</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy -->
+  <div class="privacy-notice">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 4v4c0 3.3 2.5 6.4 6 7.2C11.5 14.4 14 11.3 14 8V4L8 1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    <span>I dati inseriti (nome, cognome, codice fiscale, numero di iscrizione) sono raccolti esclusivamente ai fini della registrazione della presenza a questo evento formativo e per l'assegnazione dei crediti. Non vengono condivisi con terzi né utilizzati per altri scopi.</span>
+  </div>
+
+  <!-- Log locale -->
+  <div class="card">
+    <div class="card-label">Registrazioni di oggi</div>
+    <div class="timeline" id="timeline">
+      <div class="empty-state">Nessuna registrazione ancora.</div>
+    </div>
+  </div>
+
+</main>
+<footer>Ordine Architetti PPC · Agrigento</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ─── CONFIGURAZIONE ──────────────────────────────────────────
+  const EVENTO_NOME   = "CONSIGLIO ORDINE";               // ← cambia qui
+  const EVENTO_DATA   = "04/05/2026";                // ← cambia qui (gg/mm/aaaa)
+  const EVENTO_SEDE   = "via Gaglio, 1 - Agrigento";               // ← cambia qui
+  const EVENTO_INIZIO    = "09:00";                  // ← orario inizio evento
+  const EVENTO_FINE      = "22:00";                  // ← orario fine evento
+  const ORARIO_APERTURA  = "08:30";                  // ← da quest'ora si può firmare l'entrata
+  const ORARIO_LIMITE    = "22:30";                  // ← fino a quest'ora si può firmare l'uscita
+  const ORE_PREVISTE  = 13;                           // ← ore totali previste per l'evento
+  const PERC_MINIMA   = 80;                          // ← % minima di presenze per ottenere i crediti
+  const SEDE_LAT      = 37.360903834498416;                    // ← lat sede evento
+  const SEDE_LNG      = 13.844031053947571;                    // ← lng sede evento
+  const RAGGIO_M      = 100;                         // raggio tolleranza GPS (metri)
+  const SCRIPT_URL    = "https://script.google.com/macros/s/AKfycbxfqQ96NCDJai8lP31PYKKSFQji_IZy0IBqkGzsTSIV1uXJKtCnFTpe2q9bojv-C1nT/exec"; // ← URL da Google Apps Script
+  // ─────────────────────────────────────────────────────────────
+
+  const configured = SCRIPT_URL !== "INCOLLA_QUI_URL_APPS_SCRIPT" && SEDE_LAT !== 0;
+  if (!configured) document.getElementById('configBanner').style.display = 'block';
+
+  document.getElementById('evtName').textContent = EVENTO_NOME;
+  document.getElementById('evtMeta').textContent = EVENTO_DATA;
+  document.getElementById('evtSede').textContent = '📍 ' + EVENTO_SEDE;
+  document.getElementById('headerDate').textContent = EVENTO_DATA;
+
+  // Pills info evento
+  const minutiMinimi = Math.round(ORE_PREVISTE * 60 * PERC_MINIMA / 100);
+  const oreMinime = (minutiMinimi / 60).toFixed(1).replace('.0','');
+  document.getElementById('evtPills').innerHTML = `
+    <span class="pill">🕐 ${EVENTO_INIZIO} – ${EVENTO_FINE}</span>
+    <span class="pill">⏱ ${ORE_PREVISTE}h previste</span>
+    <span class="pill warn">✅ Min. ${PERC_MINIMA}% (${oreMinime}h) per i crediti</span>
+  `;
+
+  // Helpers orario
+  function orarioInMinuti(t) {
+    const [h, m] = t.split(':').map(Number);
+    return h * 60 + m;
+  }
+  function orarioAttualeInMinuti() {
+    const now = new Date();
+    return now.getHours() * 60 + now.getMinutes();
+  }
+  function isPrimaApertura() {
+    return orarioAttualeInMinuti() < orarioInMinuti(ORARIO_APERTURA);
+  }
+  function isOltreLimite() {
+    return orarioAttualeInMinuti() >= orarioInMinuti(ORARIO_LIMITE);
+  }
+
+  function aggiornaStatoBottoni() {
+    const btnIn  = document.getElementById('btnIn');
+    const btnOut = document.getElementById('btnOut');
+    const pills  = document.getElementById('evtPills');
+
+    if (isPrimaApertura()) {
+      btnIn.disabled  = true;
+      btnOut.disabled = true;
+      if (!document.getElementById('pillApertura')) {
+        const p = document.createElement('span');
+        p.className = 'pill warn'; p.id = 'pillApertura';
+        p.textContent = '⏳ Apertura firme alle ' + ORARIO_APERTURA;
+        pills.appendChild(p);
+      }
+    } else if (isOltreLimite()) {
+      btnIn.disabled  = true;
+      btnOut.disabled = true;
+      if (!document.getElementById('pillChiusura')) {
+        const p = document.createElement('span');
+        p.className = 'pill closed'; p.id = 'pillChiusura';
+        p.textContent = '🔒 Registrazioni chiuse alle ' + ORARIO_LIMITE;
+        pills.appendChild(p);
+      }
+    } else {
+      // Ingresso solo fino alla fine evento, uscita fino al limite
+      btnIn.disabled  = orarioAttualeInMinuti() >= orarioInMinuti(EVENTO_FINE);
+      btnOut.disabled = false;
+    }
+  }
+  aggiornaStatoBottoni();
+  setInterval(aggiornaStatoBottoni, 60000);
+
+  // ── Gestione blocco dispositivo ──
+  const SAVED_KEY  = 'oap_dati_personali';
+  const LOCKED_KEY = 'oap_dispositivo_bloccato';
+
+  // Chiave del giorno corrente — il blocco scade automaticamente a mezzanotte
+  function chiaveGiorno() {
+    return EVENTO_DATA.replace(/\//g, '-');
+  }
+
+  function isBloccato() {
+    try {
+      const b = JSON.parse(localStorage.getItem(LOCKED_KEY));
+      return b && b.giorno === chiaveGiorno();
+    } catch(e) { return false; }
+  }
+
+  function bloccaDispositivo(nome, cognome) {
+    try {
+      localStorage.setItem(LOCKED_KEY, JSON.stringify({ giorno: chiaveGiorno(), nome, cognome }));
+    } catch(e) {}
+  }
+
+  function salvaDati(nome, cognome, cf, iscrizione) {
+    try {
+      localStorage.setItem(SAVED_KEY, JSON.stringify({ nome, cognome, cf, iscrizione }));
+    } catch(e) {}
+  }
+
+  function mostraBlocco(nome, cognome) {
+    const wrap = document.getElementById('input-wrap');
+    // Nascondi tutti i campi e i pulsanti
+    Array.from(wrap.children).forEach(el => el.style.display = 'none');
+    // Mostra banner di blocco
+    const banner = document.createElement('div');
+    banner.id = 'lockBanner';
+    banner.innerHTML = `
+      <div style="text-align:center;padding:12px 0 4px">
+        <div style="font-size:36px;margin-bottom:12px">🔒</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">${nome} ${cognome}</div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.6">Questo dispositivo è già stato utilizzato<br>per registrare la presenza oggi.</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:16px;font-family:'DM Mono',monospace">Usa il pulsante qui sotto solo per<br>registrare la tua uscita.</div>
+      </div>`;
+    wrap.appendChild(banner);
+    // Mostra solo il pulsante Uscita e l'indicatore GPS
+    document.getElementById('gpsStatus').style.display = 'flex';
+    document.getElementById('btnOut').style.display    = 'flex';
+    document.getElementById('sendingIndicator').style.display = '';
+    // Riempi i campi nascosti con i dati salvati per la sottomissione
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVED_KEY));
+      if (saved) {
+        document.getElementById('nomeInput').value       = saved.nome       || nome;
+        document.getElementById('cognomeInput').value    = saved.cognome    || cognome;
+        document.getElementById('cfInput').value         = saved.cf         || '';
+        document.getElementById('iscrizioneInput').value = saved.iscrizione || '';
+      }
+    } catch(e) {}
+  }
+
+  function caricaDatiSalvati() {
+    // Se il dispositivo è bloccato, mostra schermata di blocco
+    if (isBloccato()) {
+      try {
+        const b = JSON.parse(localStorage.getItem(LOCKED_KEY));
+        mostraBlocco(b.nome, b.cognome);
+      } catch(e) {}
+      return;
+    }
+
+    // Altrimenti precompila i campi se ci sono dati salvati
+    try {
+      const saved = JSON.parse(localStorage.getItem(SAVED_KEY));
+      if (!saved) return;
+      document.getElementById('nomeInput').value       = saved.nome       || '';
+      document.getElementById('cognomeInput').value    = saved.cognome    || '';
+      document.getElementById('cfInput').value         = saved.cf         || '';
+      document.getElementById('iscrizioneInput').value = saved.iscrizione || '';
+      if (saved.nome || saved.cognome) {
+        const wrap = document.getElementById('input-wrap');
+        const banner = document.createElement('div');
+        banner.className = 'saved-banner';
+        banner.id = 'savedBanner';
+        banner.innerHTML = `<span>Bentornato/a, <strong>${saved.nome} ${saved.cognome}</strong>.<br>I tuoi dati sono stati precompilati.</span>
+          <button onclick="sbloccaCampi()">Non sono io</button>`;
+        wrap.insertBefore(banner, wrap.firstChild);
+      }
+    } catch(e) {}
+  }
+
+  function sbloccaCampi() {
+    localStorage.removeItem(SAVED_KEY);
+    const banner = document.getElementById('savedBanner');
+    if (banner) banner.remove();
+    document.getElementById('nomeInput').value       = '';
+    document.getElementById('cognomeInput').value    = '';
+    document.getElementById('cfInput').value         = '';
+    document.getElementById('iscrizioneInput').value = '';
+    document.getElementById('nomeInput').focus();
+  }
+
+  caricaDatiSalvati();
+
+  let gpsPos = null;
+  let gpsOk  = false;
+
+  function setGps(state, text) {
+    const el = document.getElementById('gpsStatus');
+    const dot = el.querySelector('.dot');
+    el.className = 'gps-status ' + state;
+    document.getElementById('gpsText').textContent = text;
+    dot.className = 'dot' + (state === 'loading' ? ' pulse' : '');
+  }
+
+  function haversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  function rilevaPosizione() {
+    if (!navigator.geolocation) {
+      setGps('error', 'GPS non supportato da questo browser');
+      return;
+    }
+    setGps('loading', 'Rilevamento posizione in corso…');
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        gpsPos = { lat: pos.coords.latitude, lng: pos.coords.longitude, acc: Math.round(pos.coords.accuracy) };
+        if (!configured) {
+          setGps('ok', `Pos: ${gpsPos.lat.toFixed(5)}, ${gpsPos.lng.toFixed(5)} ±${gpsPos.acc}m`);
+          gpsOk = true;
+          return;
+        }
+        const dist = Math.round(haversine(gpsPos.lat, gpsPos.lng, SEDE_LAT, SEDE_LNG));
+        if (dist <= RAGGIO_M) {
+          gpsOk = true;
+          setGps('ok', `Posizione verificata — ${dist}m dalla sede`);
+        } else {
+          gpsOk = false;
+          setGps('error', `Sei a ${dist}m dalla sede (max ${RAGGIO_M}m)`);
+        }
+      },
+      err => {
+        const msgs = { 1:'Permesso GPS negato', 2:'Posizione non disponibile', 3:'Timeout GPS' };
+        setGps('error', msgs[err.code] || 'Errore GPS');
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+    );
+  }
+
+  rilevaPosizione();
+
+  let log = JSON.parse(localStorage.getItem('presenze_log') || '[]');
+  renderLog();
+
+  function now() {
+    return new Date().toLocaleTimeString('it-IT', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+
+  function showToast(msg, type='') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast ' + type;
+    void t.offsetWidth;
+    requestAnimationFrame(() => t.classList.add('show'));
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  function setLoading(v) {
+    document.getElementById('sendingIndicator').className = 'sending' + (v ? ' visible' : '');
+    document.getElementById('btnIn').disabled = v;
+    document.getElementById('btnOut').disabled = v;
+  }
+
+  async function registra(tipo) {
+    if (isPrimaApertura()) {
+      showToast('Le firme aprono alle ' + ORARIO_APERTURA, 'error');
+      return;
+    }
+    if (isOltreLimite()) {
+      showToast('Registrazioni chiuse alle ' + ORARIO_LIMITE, 'error');
+      return;
+    }
+    if (tipo === 'ingresso' && orarioAttualeInMinuti() >= orarioInMinuti(EVENTO_FINE)) {
+      showToast('Non è più possibile registrare l'ingresso', 'error');
+      return;
+    }
+    const nome = document.getElementById('nomeInput').value.trim();
+    const cognome = document.getElementById('cognomeInput').value.trim();
+    const cf = document.getElementById('cfInput').value.trim().toUpperCase();
+    const iscrizione = document.getElementById('iscrizioneInput').value.trim();
+    // Valida tutti i campi obbligatori
+    const fields = [
+      { id: 'nomeInput',       val: nome,       msg: 'Il nome è obbligatorio' },
+      { id: 'cognomeInput',    val: cognome,     msg: 'Il cognome è obbligatorio' },
+      { id: 'cfInput',         val: cf,          msg: 'Il codice fiscale è obbligatorio' },
+      { id: 'iscrizioneInput', val: iscrizione,  msg: 'Il numero di iscrizione è obbligatorio' },
+    ];
+    let hasError = false;
+    fields.forEach(f => {
+      const el = document.getElementById(f.id);
+      if (!f.val) {
+        el.style.borderColor = 'var(--red)';
+        el.style.background  = 'var(--red-dim)';
+        if (!hasError) { showToast(f.msg, 'error'); el.focus(); hasError = true; }
+      } else {
+        el.style.borderColor = '';
+        el.style.background  = '';
+      }
+    });
+    if (hasError) return;
+
+    if (!gpsPos) {
+      showToast('Attendere il rilevamento GPS…', 'error');
+      rilevaPosizione();
+      return;
+    }
+    if (configured && !gpsOk) {
+      showToast('Posizione non verificata. Non sei nella sede.', 'error');
+      return;
+    }
+
+    const orario = now();
+    const entry = { nome, cognome, cf, iscrizione, tipo, orario, lat: gpsPos.lat.toFixed(6), lng: gpsPos.lng.toFixed(6), acc: gpsPos.acc };
+
+    setLoading(true);
+    try {
+      if (configured) {
+        const params = new URLSearchParams({
+          evento: EVENTO_NOME,
+          data: EVENTO_DATA,
+          ...entry
+        });
+        await fetch(SCRIPT_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+      }
+      log.push(entry);
+      localStorage.setItem('presenze_log', JSON.stringify(log));
+      renderLog();
+      // Salva dati e blocca dispositivo dopo l'ingresso
+      salvaDati(nome, cognome, cf, iscrizione);
+      if (tipo === 'ingresso') {
+        bloccaDispositivo(nome, cognome);
+        showToast('Ingresso registrato ✓', 'success');
+        setTimeout(() => mostraBlocco(nome, cognome), 1200);
+      } else {
+        showToast('Uscita registrata ✓', 'success');
+        document.getElementById('nomeInput').value       = '';
+        document.getElementById('cognomeInput').value    = '';
+        document.getElementById('cfInput').value         = '';
+        document.getElementById('iscrizioneInput').value = '';
+      }
+    } catch(e) {
+      showToast('Errore di connessione. Riprova.', 'error');
+    }
+    setLoading(false);
+  }
+
+  function renderLog() {
+    const el = document.getElementById('timeline');
+    if (!log.length) {
+      el.innerHTML = '<div class="empty-state">Nessuna registrazione ancora.</div>';
+      return;
+    }
+    el.innerHTML = [...log].reverse().map(e => `
+      <div class="tl-item">
+        <div class="tl-icon ${e.tipo === 'ingresso' ? 'in' : 'out'}">
+          ${e.tipo === 'ingresso' ? '↓' : '↑'}
+        </div>
+        <div>
+          <div class="tl-name">${e.nome} ${e.cognome}</div>
+          <div class="tl-meta">${e.orario} · ±${e.acc}m</div>
+        </div>
+        <div class="tl-badge ${e.tipo === 'ingresso' ? 'in' : 'out'}">${e.tipo}</div>
+      </div>
+    `).join('');
+  }
+</script>
+</body>
+</html>
