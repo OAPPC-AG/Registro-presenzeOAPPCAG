@@ -385,7 +385,7 @@
 
   <!-- Config notice (solo se SCRIPT_URL non è impostato) -->
   <div class="config-banner" id="configBanner" style="display:none">
-    ⚠ Configura prima il file: imposta EVENTO_NOME, EVENTO_DATA e SCRIPT_URL.<br>Segui le istruzioni nel file README.
+    ⚠ Configurazione non caricata. Verifica che il foglio "Configurazione" su Google Sheets sia compilato e che la web app sia pubblicata correttamente.
   </div>
 
   <!-- Info evento -->
@@ -477,8 +477,9 @@
 
   // Carica configurazione da Google Sheets all'avvio
   async function caricaConfigDaSheets() {
+    let configOk = false;
     try {
-      const res  = await fetch(SCRIPT_URL + '?azione=config');
+      const res  = await fetch(SCRIPT_URL + '?azione=config', { redirect: 'follow' });
       const json = await res.json();
       if (json.status !== 'ok') throw new Error(json.message);
       const c = json.config;
@@ -494,15 +495,15 @@
       if (c.SEDE_LAT)        SEDE_LAT        = parseFloat(c.SEDE_LAT);
       if (c.SEDE_LNG)        SEDE_LNG        = parseFloat(c.SEDE_LNG);
       if (c.RAGGIO_M)        RAGGIO_M        = parseFloat(c.RAGGIO_M);
+      configOk = SEDE_LAT !== 0;
     } catch (err) {
       console.warn('Configurazione da Sheets non disponibile:', err);
     }
-    applicaConfigurazione();
+    applicaConfigurazione(configOk);
   }
 
-  function applicaConfigurazione() {
-    const configured = SCRIPT_URL !== "https://script.google.com/macros/s/AKfycby0sOK7H4J4deStk7cQgXhOlXBA9vEFUMzQDT8wi5XA8C9um8RROk2NQpXEGfqxeDV9/exec" && SEDE_LAT !== 0;
-    if (!configured) document.getElementById('configBanner').style.display = 'block';
+  function applicaConfigurazione(configOk) {
+    if (!configOk) document.getElementById('configBanner').style.display = 'block';
 
     document.getElementById('evtName').textContent = EVENTO_NOME;
     document.getElementById('evtMeta').textContent = EVENTO_DATA;
