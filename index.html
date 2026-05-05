@@ -457,38 +457,26 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ─── CONFIGURAZIONE ──────────────────────────────────────────
-  const EVENTO_NOME   = "CONSIGLIO ORDINE";               // ← cambia qui
-  const EVENTO_DATA   = "05/05/2026";                // ← cambia qui (gg/mm/aaaa)
-  const EVENTO_SEDE   = "via Gaglio, 1 - Agrigento";               // ← cambia qui
-  const EVENTO_INIZIO    = "08:00";                  // ← orario inizio evento
-  const EVENTO_FINE      = "22:00";                  // ← orario fine evento
-  const ORARIO_APERTURA  = "07:30";                  // ← da quest'ora si può firmare l'entrata
-  const ORARIO_LIMITE    = "22:30";                  // ← fino a quest'ora si può firmare l'uscita
-  const ORE_PREVISTE  = 13;                           // ← ore totali previste per l'evento
-  const PERC_MINIMA   = 80;                          // ← % minima di presenze per ottenere i crediti
-  const SEDE_LAT      = 37.360903834498416;                    // ← lat sede evento
-  const SEDE_LNG      = 13.844031053947571;                    // ← lng sede evento
-  const RAGGIO_M      = 100;                         // raggio tolleranza GPS (metri)
-  const SCRIPT_URL    = "https://script.google.com/macros/s/AKfycbxfqQ96NCDJai8lP31PYKKSFQji_IZy0IBqkGzsTSIV1uXJKtCnFTpe2q9bojv-C1nT/exec"; // ← URL da Google Apps Script
+  // ─── UNICA COSA DA CONFIGURARE ───────────────────────────────
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfqQ96NCDJai8lP31PYKKSFQji_IZy0IBqkGzsTSIV1uXJKtCnFTpe2q9bojv-C1nT/exec";
   // ─────────────────────────────────────────────────────────────
 
-  const configured = SCRIPT_URL !== "INCOLLA_QUI_URL_APPS_SCRIPT" && SEDE_LAT !== 0;
-  if (!configured) document.getElementById('configBanner').style.display = 'block';
-
-  document.getElementById('evtName').textContent = EVENTO_NOME;
-  document.getElementById('evtMeta').textContent = EVENTO_DATA;
-  document.getElementById('evtSede').textContent = '📍 ' + EVENTO_SEDE;
-  document.getElementById('headerDate').textContent = EVENTO_DATA;
-
-  // Pills info evento
-  const minutiMinimi = Math.round(ORE_PREVISTE * 60 * PERC_MINIMA / 100);
-  const oreMinime = (minutiMinimi / 60).toFixed(1).replace('.0','');
-  document.getElementById('evtPills').innerHTML = `
-    <span class="pill">🕐 ${EVENTO_INIZIO} – ${EVENTO_FINE}</span>
-    <span class="pill">⏱ ${ORE_PREVISTE}h previste</span>
-    <span class="pill warn">✅ Min. ${PERC_MINIMA}% (${oreMinime}h) per i crediti</span>
-  `;
+  // Variabili di configurazione — caricate da Google Sheets
+  let EVENTO_NOME    = '…';
+  let EVENTO_DATA    = '…';
+  let EVENTO_SEDE    = '…';
+  let EVENTO_INIZIO  = '09:00';
+  let EVENTO_FINE    = '18:00';
+  let ORARIO_APERTURA= '08:30';
+  let ORARIO_LIMITE  = '18:30';
+  let ORE_PREVISTE   = 8;
+  let PERC_MINIMA    = 70;
+  let SEDE_LAT       = 0;
+  let SEDE_LNG       = 0;
+  let RAGGIO_M       = 100;
+  let configured     = false;
+  let LOG_KEY        = 'presenze_log_default';
+  let log            = [];
 
   // Helpers orario
   function orarioInMinuti(t) {
@@ -510,7 +498,6 @@
     const btnIn  = document.getElementById('btnIn');
     const btnOut = document.getElementById('btnOut');
     const pills  = document.getElementById('evtPills');
-
     if (isPrimaApertura()) {
       btnIn.disabled  = true;
       btnOut.disabled = true;
@@ -530,18 +517,62 @@
         pills.appendChild(p);
       }
     } else {
-      // Ingresso solo fino alla fine evento, uscita fino al limite
       btnIn.disabled  = orarioAttualeInMinuti() >= orarioInMinuti(EVENTO_FINE);
-      // Non riabilitare btnOut se l'uscita è già stata registrata
       const uscitaGiaFatta = log.some(e => e.tipo === 'uscita');
       btnOut.disabled = uscitaGiaFatta;
     }
   }
-  const LOG_KEY = 'presenze_log_' + EVENTO_DATA.replace(/\//g, '-');
-  let log = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
 
-  aggiornaStatoBottoni();
-  setInterval(aggiornaStatoBottoni, 60000);
+  function popolaUI() {
+    document.getElementById('evtName').textContent = EVENTO_NOME;
+    document.getElementById('evtMeta').textContent = EVENTO_DATA;
+    document.getElementById('evtSede').textContent = '📍 ' + EVENTO_SEDE;
+    document.getElementById('headerDate').textContent = EVENTO_DATA;
+    const minutiMinimi = Math.round(ORE_PREVISTE * 60 * PERC_MINIMA / 100);
+    const oreMinime = (minutiMinimi / 60).toFixed(1).replace('.0', '');
+    document.getElementById('evtPills').innerHTML =
+      '<span class="pill">🕐 ' + EVENTO_INIZIO + ' – ' + EVENTO_FINE + '</span>' +
+      '<span class="pill">⏱ ' + ORE_PREVISTE + 'h previste</span>' +
+      '<span class="pill warn">✅ Min. ' + PERC_MINIMA + '% (' + oreMinime + 'h) per i crediti</span>';
+    aggiornaStatoBottoni();
+    setInterval(aggiornaStatoBottoni, 60000);
+  }
+
+  async function caricaConfigurazione() {
+    document.getElementById('evtName').textContent = 'Caricamento evento…';
+    try {
+      const res  = await fetch(SCRIPT_URL + '?azione=config');
+      const data = await res.json();
+      if (data.status !== 'ok' || !data.config) throw new Error('Risposta non valida');
+      const c = data.config;
+      EVENTO_NOME     = c.EVENTO_NOME     || EVENTO_NOME;
+      EVENTO_DATA     = c.EVENTO_DATA     || EVENTO_DATA;
+      EVENTO_SEDE     = c.EVENTO_SEDE     || EVENTO_SEDE;
+      EVENTO_INIZIO   = c.EVENTO_INIZIO   || EVENTO_INIZIO;
+      EVENTO_FINE     = c.EVENTO_FINE     || EVENTO_FINE;
+      ORARIO_APERTURA = c.ORARIO_APERTURA || ORARIO_APERTURA;
+      ORARIO_LIMITE   = c.ORARIO_LIMITE   || ORARIO_LIMITE;
+      ORE_PREVISTE    = parseFloat(c.ORE_PREVISTE)  || ORE_PREVISTE;
+      PERC_MINIMA     = parseFloat(c.PERC_MINIMA)   || PERC_MINIMA;
+      SEDE_LAT        = parseFloat(c.SEDE_LAT)      || SEDE_LAT;
+      SEDE_LNG        = parseFloat(c.SEDE_LNG)      || SEDE_LNG;
+      RAGGIO_M        = parseFloat(c.RAGGIO_M)      || RAGGIO_M;
+      configured      = SEDE_LAT !== 0 && SEDE_LNG !== 0;
+      LOG_KEY         = 'presenze_log_' + EVENTO_DATA.replace(/\//g, '-');
+      log             = JSON.parse(localStorage.getItem(LOG_KEY) || '[]');
+      popolaUI();
+      renderLog();
+      // Se bloccato, aggiorna il check con il log corretto
+      if (isBloccato()) caricaDatiSalvati();
+    } catch(err) {
+      document.getElementById('configBanner').style.display = 'block';
+      document.getElementById('configBanner').textContent =
+        '⚠ Impossibile caricare la configurazione da Google Sheets. Controlla la connessione.';
+      document.getElementById('evtName').textContent = 'Errore di configurazione';
+    }
+  }
+
+  caricaConfigurazione();
 
   // ── Gestione blocco dispositivo ──
   const SAVED_KEY    = 'oap_dati_personali';
