@@ -457,69 +457,37 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ─── UNICA COSA DA MODIFICARE ────────────────────────────────
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfqQ96NCDJai8lP31PYKKSFQji_IZy0IBqkGzsTSIV1uXJKtCnFTpe2q9bojv-C1nT/exec";
+  // ─── CONFIGURAZIONE — modifica questi valori per ogni evento ──
+  const EVENTO_NOME      = "CONSIGLIO ORDINE";               // ← nome evento
+  const EVENTO_DATA      = "04/05/2026";                     // ← data (gg/mm/aaaa)
+  const EVENTO_SEDE      = "via Gaglio, 1 - Agrigento";      // ← sede
+  const EVENTO_INIZIO    = "09:00";                          // ← orario inizio
+  const EVENTO_FINE      = "22:00";                          // ← orario fine
+  const ORARIO_APERTURA  = "08:30";                          // ← da quando si può firmare l'entrata
+  const ORARIO_LIMITE    = "22:30";                          // ← fino a quando si può firmare l'uscita
+  const ORE_PREVISTE     = 13;                               // ← ore totali previste
+  const PERC_MINIMA      = 80;                               // ← % minima per i crediti
+  const SEDE_LAT         = 37.360903834498416;               // ← latitudine sede
+  const SEDE_LNG         = 13.844031053947571;               // ← longitudine sede
+  const RAGGIO_M         = 100;                              // ← raggio GPS tolleranza (metri)
+  const SCRIPT_URL       = "https://script.google.com/macros/s/AKfycbxfqQ96NCDJai8lP31PYKKSFQji_IZy0IBqkGzsTSIV1uXJKtCnFTpe2q9bojv-C1nT/exec";
   // ─────────────────────────────────────────────────────────────
 
-  // Valori di configurazione (verranno sovrascritti da Google Sheets)
-  let EVENTO_NOME    = "—";
-  let EVENTO_DATA    = "—";
-  let EVENTO_SEDE    = "—";
-  let EVENTO_INIZIO  = "09:00";
-  let EVENTO_FINE    = "18:00";
-  let ORARIO_APERTURA = "08:30";
-  let ORARIO_LIMITE   = "18:30";
-  let ORE_PREVISTE   = 8;
-  let PERC_MINIMA    = 80;
-  let SEDE_LAT       = 0;
-  let SEDE_LNG       = 0;
-  let RAGGIO_M       = 100;
+  const configured = SEDE_LAT !== 0 && SCRIPT_URL !== "INCOLLA_QUI_URL_APPS_SCRIPT";
+  if (!configured) document.getElementById('configBanner').style.display = 'block';
 
-  // Carica configurazione da Google Sheets all'avvio
-  async function caricaConfigDaSheets() {
-    let configOk = false;
-    try {
-      const res  = await fetch(SCRIPT_URL + '?azione=config', { redirect: 'follow' });
-      const json = await res.json();
-      if (json.status !== 'ok') throw new Error(json.message);
-      const c = json.config;
-      if (c.EVENTO_NOME)     EVENTO_NOME     = c.EVENTO_NOME;
-      if (c.EVENTO_DATA)     EVENTO_DATA     = c.EVENTO_DATA;
-      if (c.EVENTO_SEDE)     EVENTO_SEDE     = c.EVENTO_SEDE;
-      if (c.EVENTO_INIZIO)   EVENTO_INIZIO   = c.EVENTO_INIZIO;
-      if (c.EVENTO_FINE)     EVENTO_FINE     = c.EVENTO_FINE;
-      if (c.ORARIO_APERTURA) ORARIO_APERTURA = c.ORARIO_APERTURA;
-      if (c.ORARIO_LIMITE)   ORARIO_LIMITE   = c.ORARIO_LIMITE;
-      if (c.ORE_PREVISTE)    ORE_PREVISTE    = parseFloat(c.ORE_PREVISTE);
-      if (c.PERC_MINIMA)     PERC_MINIMA     = parseFloat(c.PERC_MINIMA);
-      if (c.SEDE_LAT)        SEDE_LAT        = parseFloat(c.SEDE_LAT);
-      if (c.SEDE_LNG)        SEDE_LNG        = parseFloat(c.SEDE_LNG);
-      if (c.RAGGIO_M)        RAGGIO_M        = parseFloat(c.RAGGIO_M);
-      configOk = SEDE_LAT !== 0;
-    } catch (err) {
-      console.warn('Configurazione da Sheets non disponibile:', err);
-    }
-    applicaConfigurazione(configOk);
-  }
+  document.getElementById('evtName').textContent = EVENTO_NOME;
+  document.getElementById('evtMeta').textContent = EVENTO_DATA;
+  document.getElementById('evtSede').textContent = '📍 ' + EVENTO_SEDE;
+  document.getElementById('headerDate').textContent = EVENTO_DATA;
 
-  function applicaConfigurazione(configOk) {
-    if (!configOk) document.getElementById('configBanner').style.display = 'block';
-
-    document.getElementById('evtName').textContent = EVENTO_NOME;
-    document.getElementById('evtMeta').textContent = EVENTO_DATA;
-    document.getElementById('evtSede').textContent = '📍 ' + EVENTO_SEDE;
-    document.getElementById('headerDate').textContent = EVENTO_DATA;
-
-    const minutiMinimi = Math.round(ORE_PREVISTE * 60 * PERC_MINIMA / 100);
-    const oreMinime = (minutiMinimi / 60).toFixed(1).replace('.0', '');
-    document.getElementById('evtPills').innerHTML = `
-      <span class="pill">🕐 ${EVENTO_INIZIO} – ${EVENTO_FINE}</span>
-      <span class="pill">⏱ ${ORE_PREVISTE}h previste</span>
-      <span class="pill warn">✅ Min. ${PERC_MINIMA}% (${oreMinime}h) per i crediti</span>
-    `;
-  }
-
-  caricaConfigDaSheets();
+  const minutiMinimi = Math.round(ORE_PREVISTE * 60 * PERC_MINIMA / 100);
+  const oreMinime = (minutiMinimi / 60).toFixed(1).replace('.0', '');
+  document.getElementById('evtPills').innerHTML = `
+    <span class="pill">🕐 ${EVENTO_INIZIO} – ${EVENTO_FINE}</span>
+    <span class="pill">⏱ ${ORE_PREVISTE}h previste</span>
+    <span class="pill warn">✅ Min. ${PERC_MINIMA}% (${oreMinime}h) per i crediti</span>
+  `;
 
   // Helpers orario
   function orarioInMinuti(t) {
