@@ -720,7 +720,13 @@
     );
   }
 
-  rilevaPosizione();
+  if (GPS_ABILITATO) {
+    rilevaPosizione();
+  } else {
+    gpsPos = { lat: parseFloat(SEDE_LAT).toFixed(6), lng: parseFloat(SEDE_LNG).toFixed(6), acc: 0 };
+    setGps('ok', 'Controllo GPS disabilitato');
+    gpsOk = true;
+  }
 
   renderLog();
 
