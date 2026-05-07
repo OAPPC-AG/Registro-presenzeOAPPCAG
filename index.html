@@ -395,7 +395,7 @@
 
   <!-- Config notice (solo se SCRIPT_URL non è impostato) -->
   <div class="config-banner" id="configBanner" style="display:none">
-    ⚠ Configurazione non caricata. Verifica che il foglio "Configurazione" su Google Sheets sia compilato e che la web app sia pubblicata correttamente.
+    ⚠ Configura il file prima di pubblicarlo: imposta EVENTO_NOME, EVENTO_DATA, SEDE_LAT, SEDE_LNG e SCRIPT_URL.
   </div>
 
   <!-- Info evento -->
@@ -473,16 +473,16 @@
   const EVENTO_NOME      = "CONSIGLIO ORDINE";               // ← nome evento
   const EVENTO_DATA      = "07/05/2026";                     // ← data (gg/mm/aaaa)
   const EVENTO_SEDE      = "via Gaglio, 1 - Agrigento";      // ← sede
-  const EVENTO_INIZIO    = "10:50";                          // ← orario inizio
+  const EVENTO_INIZIO    = "09:00";                          // ← orario inizio
   const EVENTO_FINE      = "21:00";                          // ← orario fine
-  const ORARIO_APERTURA  = "10:45";                          // ← da quando si può firmare l'entrata
+  const ORARIO_APERTURA  = "08:30";                          // ← da quando si può firmare l'entrata
   const ORARIO_LIMITE    = "21:30";                          // ← fino a quando si può firmare l'uscita
   const ORE_PREVISTE     = 12;                               // ← ore totali previste
   const PERC_MINIMA      = 80;                               // ← % minima per i crediti
-  const SEDE_LAT         = 0;               // ← latitudine sede
+  const SEDE_LAT         = 37.360903834498416;               // ← latitudine sede
   const SEDE_LNG         = 13.844031053947571;               // ← longitudine sede
   const RAGGIO_M         = 100;                              // ← raggio GPS tolleranza (metri)
-  const SCRIPT_URL       = "https://script.google.com/macros/s/AKfycbyiV2Znap47KwB6bgYAGG1DWQVqAgaO3NXZZP6s4CO7IUa8TcfX04fwmOoXQYI6XB0bNg/exec";
+  const SCRIPT_URL       = "https://script.google.com/macros/s/AKfycbycZHANc16BiznxU7Ng7j-yEc_iRkwz2eTTew9HDgq7XB-nnCdO2ks64HPiL3aLlTay/exec";
   // ─────────────────────────────────────────────────────────────
 
   const configured = SEDE_LAT !== 0 && SCRIPT_URL !== "INCOLLA_QUI_URL_APPS_SCRIPT";
