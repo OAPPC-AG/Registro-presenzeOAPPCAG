@@ -167,6 +167,16 @@
   .dot.pulse { animation: pulse 1.2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 
+  .status-banner {
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .status-banner.prima   { background: #fffbeb; color: #92400e; border: 1px solid #f59e0b; }
+  .status-banner.chiusa  { background: #fde8e8; color: #991b1b; border: 1px solid #f87171; }
   .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
   .btn {
@@ -419,6 +429,8 @@
         <span id="gpsText">Posizione non ancora rilevata</span>
       </div>
 
+      <div id="statusBanner" style="display:none"></div>
+
       <div class="btn-group">
         <button class="btn btn-in" id="btnIn">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="#0f0f0f" stroke-width="2" stroke-linecap="round"/></svg>
@@ -509,10 +521,14 @@
     const btnIn  = document.getElementById('btnIn');
     const btnOut = document.getElementById('btnOut');
     const pills  = document.getElementById('evtPills');
+    const banner = document.getElementById('statusBanner');
 
     if (isPrimaApertura()) {
       btnIn.disabled  = true;
       btnOut.disabled = true;
+      banner.style.display = '';
+      banner.className = 'status-banner prima';
+      banner.innerHTML = '⏳ La registrazione delle presenze non è ancora attiva.<br><small>Apertura firme alle ' + ORARIO_APERTURA + '</small>';
       if (!document.getElementById('pillApertura')) {
         const p = document.createElement('span');
         p.className = 'pill warn'; p.id = 'pillApertura';
@@ -522,6 +538,9 @@
     } else if (isOltreLimite()) {
       btnIn.disabled  = true;
       btnOut.disabled = true;
+      banner.style.display = '';
+      banner.className = 'status-banner chiusa';
+      banner.innerHTML = '🔒 La registrazione delle presenze è terminata.<br><small>Chiusura firme alle ' + ORARIO_LIMITE + '</small>';
       if (!document.getElementById('pillChiusura')) {
         const p = document.createElement('span');
         p.className = 'pill closed'; p.id = 'pillChiusura';
@@ -529,6 +548,7 @@
         pills.appendChild(p);
       }
     } else {
+      banner.style.display = 'none';
       // Ingresso solo fino alla fine evento, uscita fino al limite
       btnIn.disabled  = orarioAttualeInMinuti() >= orarioInMinuti(EVENTO_FINE);
       // Non riabilitare btnOut se l'uscita è già stata registrata
@@ -830,10 +850,8 @@
       </div>
     `).join('');
   }
-
   document.getElementById('btnIn').addEventListener('click', function() { registra('ingresso'); });
   document.getElementById('btnOut').addEventListener('click', function() { registra('uscita'); });
-
 </script>
 </body>
 </html>
