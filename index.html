@@ -720,7 +720,13 @@
     );
   }
 
-  rilevaPosizione();
+  if (GPS_ABILITATO) {
+    rilevaPosizione();
+  } else {
+    gpsPos = { lat: parseFloat(SEDE_LAT), lng: parseFloat(SEDE_LNG), acc: 0 };
+    setGps('ok', 'Controllo GPS disabilitato');
+    gpsOk = true;
+  }
 
   renderLog();
 
@@ -788,14 +794,18 @@
     });
     if (hasError) return;
 
-    if (!gpsPos) {
-      showToast('Attendere il rilevamento GPS…', 'error');
-      rilevaPosizione();
-      return;
-    }
-    if (configured && GPS_ABILITATO && !gpsOk) {
-      showToast('Posizione non verificata. Non sei nella sede.', 'error');
-      return;
+    if (!GPS_ABILITATO) {
+      if (!gpsPos) gpsPos = { lat: parseFloat(SEDE_LAT), lng: parseFloat(SEDE_LNG), acc: 0 };
+    } else {
+      if (!gpsPos) {
+        showToast('Attendere il rilevamento GPS…', 'error');
+        rilevaPosizione();
+        return;
+      }
+      if (configured && !gpsOk) {
+        showToast('Posizione non verificata. Non sei nella sede.', 'error');
+        return;
+      }
     }
 
     const orario = now();
