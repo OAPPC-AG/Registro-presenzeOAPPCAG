@@ -195,8 +195,8 @@
 
   .btn-in  { background: var(--accent); color: #fff; }
   .btn-in:hover:not(:disabled)  { background: var(--accent-hover); }
-  .btn-out { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
-  .btn-out:hover:not(:disabled) { background: #e5e7f0; }
+  .btn-out { background: var(--red); color: #fff; border: none; }
+  .btn-out:hover:not(:disabled) { background: #c41f1f; }
 
   .timeline { display: flex; flex-direction: column; }
   .tl-item {
@@ -438,7 +438,7 @@
           Ingresso
         </button>
         <button class="btn btn-out" id="btnOut">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
           Uscita
         </button>
       </div>
@@ -768,13 +768,31 @@
       showToast("Non è più possibile registrare l'ingresso", 'error');
       return;
     }
-    const nome = document.getElementById('nomeInput').value.trim();
-    const cognome = document.getElementById('cognomeInput').value.trim();
-    const cf = document.getElementById('cfInput').value.trim().toUpperCase();
-    const iscrizione = document.getElementById('iscrizioneInput').value.trim();
-    const email      = document.getElementById('emailInput').value.trim();
-    // Valida tutti i campi obbligatori
-    const fields = [
+    // Nella schermata di blocco i campi sono nascosti — leggi dai dati salvati
+    let nome, cognome, cf, iscrizione, email;
+    const lockBanner = document.getElementById('lockBanner');
+    if (lockBanner) {
+      try {
+        const saved = JSON.parse(localStorage.getItem(SAVED_KEY));
+        nome       = (saved && saved.nome)       || '';
+        cognome    = (saved && saved.cognome)     || '';
+        cf         = (saved && saved.cf)          || '';
+        iscrizione = (saved && saved.iscrizione)  || '';
+        email      = '';
+      } catch(e) { nome=''; cognome=''; cf=''; iscrizione=''; email=''; }
+      if (!nome || !cognome || !cf || !iscrizione) {
+        showToast('Dati mancanti. Ricarica la pagina.', 'error');
+        return;
+      }
+    } else {
+      nome       = document.getElementById('nomeInput').value.trim();
+      cognome    = document.getElementById('cognomeInput').value.trim();
+      cf         = document.getElementById('cfInput').value.trim().toUpperCase();
+      iscrizione = document.getElementById('iscrizioneInput').value.trim();
+      email      = document.getElementById('emailInput').value.trim();
+    }
+    // Valida tutti i campi obbligatori (solo se non in schermata blocco)
+    if (!lockBanner) { const fields = [
       { id: 'nomeInput',       val: nome,       msg: 'Il nome è obbligatorio' },
       { id: 'cognomeInput',    val: cognome,     msg: 'Il cognome è obbligatorio' },
       { id: 'cfInput',         val: cf,          msg: 'Il codice fiscale è obbligatorio' },
@@ -792,7 +810,8 @@
         el.style.background  = '';
       }
     });
-    if (hasError) return;
+      if (hasError) return;
+    } // fine if (!lockBanner)
 
     if (!GPS_ABILITATO) {
       if (!gpsPos) gpsPos = { lat: parseFloat(SEDE_LAT), lng: parseFloat(SEDE_LNG), acc: 0 };
