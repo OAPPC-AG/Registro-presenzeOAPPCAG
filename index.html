@@ -417,6 +417,7 @@
       <input class="input-field" id="cognomeInput" type="text" placeholder="Cognome *" autocomplete="family-name" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
       <input class="input-field" id="cfInput" type="text" placeholder="Codice Fiscale *" autocomplete="off" autocorrect="off" style="text-transform:uppercase" maxlength="16" oninput="this.style.borderColor='';this.style.background=''">
       <input class="input-field" id="iscrizioneInput" type="text" placeholder="N. iscrizione all'ordine *" autocomplete="off" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
+      <input class="input-field" id="emailInput" type="email" placeholder="Email (facoltativa — riceverai una ricevuta)" autocomplete="email" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
 
 
       <label class="remember-label" id="rememberLabel">
@@ -482,7 +483,7 @@
   const SEDE_LAT         = 37.360903834498416;               // ← latitudine sede
   const SEDE_LNG         = 13.844031053947571;               // ← longitudine sede
   const RAGGIO_M         = 100;                              // ← raggio GPS tolleranza (metri)
-  const SCRIPT_URL       = "https://script.google.com/macros/s/AKfycbyiV2Znap47KwB6bgYAGG1DWQVqAgaO3NXZZP6s4CO7IUa8TcfX04fwmOoXQYI6XB0bNg/exec";
+  const SCRIPT_URL       = "https://script.google.com/macros/s/AKfycbycZHANc16BiznxU7Ng7j-yEc_iRkwz2eTTew9HDgq7XB-nnCdO2ks64HPiL3aLlTay/exec";
   // ─────────────────────────────────────────────────────────────
 
   const configured = SEDE_LAT !== 0 && SCRIPT_URL !== "INCOLLA_QUI_URL_APPS_SCRIPT";
@@ -764,6 +765,7 @@
     const cognome = document.getElementById('cognomeInput').value.trim();
     const cf = document.getElementById('cfInput').value.trim().toUpperCase();
     const iscrizione = document.getElementById('iscrizioneInput').value.trim();
+    const email      = document.getElementById('emailInput').value.trim();
     // Valida tutti i campi obbligatori
     const fields = [
       { id: 'nomeInput',       val: nome,       msg: 'Il nome è obbligatorio' },
@@ -796,7 +798,7 @@
     }
 
     const orario = now();
-    const entry = { nome, cognome, cf, iscrizione, tipo, orario, lat: gpsPos.lat.toFixed(6), lng: gpsPos.lng.toFixed(6), acc: gpsPos.acc };
+    const entry = { nome, cognome, cf, iscrizione, email, tipo, orario, lat: gpsPos.lat.toFixed(6), lng: gpsPos.lng.toFixed(6), acc: gpsPos.acc };
 
     setLoading(true);
     try {
@@ -824,6 +826,7 @@
         document.getElementById('cognomeInput').value    = '';
         document.getElementById('cfInput').value         = '';
         document.getElementById('iscrizioneInput').value = '';
+        document.getElementById('emailInput').value      = '';
       }
     } catch(e) {
       showToast('Errore di connessione. Riprova.', 'error');
