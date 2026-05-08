@@ -373,6 +373,37 @@
     color: var(--text3);
     font-family: 'DM Mono', monospace;
   }
+
+  .offline-banner {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: #fffbeb;
+    border: 1px solid #f59e0b;
+    border-radius: var(--radius);
+    font-size: 13px;
+    color: #92400e;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.5;
+  }
+  .offline-banner.visible { display: flex; }
+  .offline-banner svg { flex-shrink: 0; }
+  .offline-banner .sync-btn {
+    margin-left: auto;
+    background: #f59e0b;
+    color: #fff;
+    border: none;
+    border-radius: 7px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .offline-banner .sync-btn:disabled { opacity: .5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -396,6 +427,13 @@
   <!-- Config notice (solo se SCRIPT_URL non è impostato) -->
   <div class="config-banner" id="configBanner" style="display:none">
     ⚠ Configura il file prima di pubblicarlo: imposta EVENTO_NOME, EVENTO_DATA, SEDE_LAT, SEDE_LNG e SCRIPT_URL.
+  </div>
+
+  <!-- Banner offline/pending -->
+  <div class="offline-banner" id="offlineBanner">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 5v4M8 11v1" stroke="#92400e" stroke-width="1.8" stroke-linecap="round"/><circle cx="8" cy="8" r="6.5" stroke="#92400e" stroke-width="1.4"/></svg>
+    <span id="offlineBannerText">Connessione assente — i dati sono salvati e verranno inviati automaticamente.</span>
+    <button class="sync-btn" id="syncBtn" onclick="syncPending()">Riprova</button>
   </div>
 
   <!-- Info evento -->
@@ -870,33 +908,94 @@
     const entry = { nome, cognome, cf, iscrizione, email, tipo, orario, lat: gpsPos.lat.toFixed(6), lng: gpsPos.lng.toFixed(6), acc: gpsPos.acc };
 
     setLoading(true);
-    try {
-      if (configured) {
-        const params = new URLSearchParams({
-          evento: EVENTO_NOME,
-          data: EVENTO_DATA,
-          ...entry
-        });
+    // Salva sempre il record nel log locale
+    log.push(entry);
+    localStorage.setItem(LOG_KEY, JSON.stringify(log));
+    renderLog();
+    salvaDati(nome, cognome, cf, iscrizione, email);
+
+    // Tenta invio; se fallisce mette in coda pending
+    let inviato = false;
+    if (configured) {
+      try {
+        const params = new URLSearchParams({ evento: EVENTO_NOME, data: EVENTO_DATA, ...entry });
         await fetch(SCRIPT_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+        inviato = true;
+      } catch(e) {
+        aggiungiPending(entry);
       }
-      log.push(entry);
-      localStorage.setItem(LOG_KEY, JSON.stringify(log));
-      renderLog();
-      // Salva dati e blocca dispositivo dopo l'ingresso
-      salvaDati(nome, cognome, cf, iscrizione, email);
-      if (tipo === 'ingresso') {
-        bloccaDispositivo(nome, cognome);
-        showToast('Ingresso registrato ✓', 'success');
-        setTimeout(() => mostraBlocco(nome, cognome), 1200);
-      } else {
-        showToast('Uscita registrata ✓', 'success');
-        mostraMessaggioUscita();
-      }
-    } catch(e) {
-      showToast('Errore di connessione. Riprova.', 'error');
+    } else {
+      inviato = true;
+    }
+
+    aggiornaBannerOffline();
+
+    if (tipo === 'ingresso') {
+      bloccaDispositivo(nome, cognome);
+      showToast(inviato ? 'Ingresso registrato ✓' : 'Salvato — invio in sospeso ⚠', inviato ? 'success' : '');
+      setTimeout(() => mostraBlocco(nome, cognome), 1200);
+    } else {
+      showToast(inviato ? 'Uscita registrata ✓' : 'Salvata — invio in sospeso ⚠', inviato ? 'success' : '');
+      mostraMessaggioUscita();
     }
     setLoading(false);
   }
+
+  // ── Gestione coda pending ──
+  const PENDING_KEY = 'presenze_pending_' + EVENTO_DATA.replace(/\//g, '-');
+
+  function getPending() {
+    try { return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]'); } catch(e) { return []; }
+  }
+
+  function aggiungiPending(entry) {
+    const queue = getPending();
+    queue.push(entry);
+    localStorage.setItem(PENDING_KEY, JSON.stringify(queue));
+  }
+
+  function aggiornaBannerOffline() {
+    const banner = document.getElementById('offlineBanner');
+    const testo  = document.getElementById('offlineBannerText');
+    const queue  = getPending();
+    if (queue.length === 0) {
+      banner.classList.remove('visible');
+    } else {
+      const n = queue.length;
+      testo.textContent = `${n} registrazion${n === 1 ? 'e' : 'i'} in attesa di connessione — verr${n === 1 ? 'à' : 'anno'} inviata${n === 1 ? '' : 'e'} automaticamente.`;
+      banner.classList.add('visible');
+    }
+  }
+
+  async function syncPending() {
+    if (!configured) return;
+    const queue = getPending();
+    if (!queue.length) return;
+    const btn = document.getElementById('syncBtn');
+    btn.disabled = true;
+    btn.textContent = '…';
+    let rimanenti = [];
+    for (const entry of queue) {
+      try {
+        const params = new URLSearchParams({ evento: EVENTO_NOME, data: EVENTO_DATA, ...entry });
+        await fetch(SCRIPT_URL + '?' + params.toString(), { method: 'GET', mode: 'no-cors' });
+      } catch(e) {
+        rimanenti.push(entry);
+      }
+    }
+    localStorage.setItem(PENDING_KEY, JSON.stringify(rimanenti));
+    aggiornaBannerOffline();
+    btn.disabled = false;
+    btn.textContent = 'Riprova';
+    if (rimanenti.length === 0) showToast('Dati sincronizzati ✓', 'success');
+    else showToast('Connessione ancora assente', 'error');
+  }
+
+  // Retry automatico quando torna la connessione
+  window.addEventListener('online', () => syncPending());
+
+  // Controlla pending all'avvio
+  aggiornaBannerOffline();
 
   function renderLog() {
     const el = document.getElementById('timeline');
