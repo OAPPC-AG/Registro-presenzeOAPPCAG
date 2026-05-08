@@ -417,7 +417,7 @@
       <input class="input-field" id="cognomeInput" type="text" placeholder="Cognome *" autocomplete="family-name" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
       <input class="input-field" id="cfInput" type="text" placeholder="Codice Fiscale *" autocomplete="off" autocorrect="off" style="text-transform:uppercase" maxlength="16" oninput="this.style.borderColor='';this.style.background=''">
       <input class="input-field" id="iscrizioneInput" type="text" placeholder="N. iscrizione all'ordine *" autocomplete="off" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
-      <input class="input-field" id="emailInput" type="email" placeholder="Email (otterrai una ricevuta a fine evento)" autocomplete="email" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
+      <input class="input-field" id="emailInput" type="email" placeholder="Email *" autocomplete="email" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
 
 
       <label class="remember-label" id="rememberLabel">
@@ -472,11 +472,11 @@
 <script>
   // ─── CONFIGURAZIONE — modifica questi valori per ogni evento ──
   const EVENTO_NOME      = "CONSIGLIO ORDINE";               // ← nome evento
-  const EVENTO_DATA      = "07/05/2026";                     // ← data (gg/mm/aaaa)
+  const EVENTO_DATA      = "08/05/2026";                     // ← data (gg/mm/aaaa)
   const EVENTO_SEDE      = "via Gaglio, 1 - Agrigento";      // ← sede
-  const EVENTO_INIZIO    = "09:00";                          // ← orario inizio
+  const EVENTO_INIZIO    = "08:00";                          // ← orario inizio
   const EVENTO_FINE      = "21:45";                          // ← orario fine
-  const ORARIO_APERTURA  = "08:30";                          // ← da quando si può firmare l'entrata
+  const ORARIO_APERTURA  = "07:50";                          // ← da quando si può firmare l'entrata
   const ORARIO_LIMITE    = "21:58";                          // ← fino a quando si può firmare l'uscita
   const ORE_PREVISTE     = 12;                               // ← ore totali previste
   const PERC_MINIMA      = 80;                               // ← % minima per i crediti
@@ -587,14 +587,31 @@
     } catch(e) {}
   }
 
-  function salvaDati(nome, cognome, cf, iscrizione) {
+  function salvaDati(nome, cognome, cf, iscrizione, email) {
     try {
-      localStorage.setItem(SAVED_KEY, JSON.stringify({ nome, cognome, cf, iscrizione }));
+      localStorage.setItem(SAVED_KEY, JSON.stringify({ nome, cognome, cf, iscrizione, email }));
     } catch(e) {}
   }
 
   function mostraBlocco(nome, cognome) {
     const wrap = document.getElementById('input-wrap');
+    // Se l'uscita è già stata registrata, mostra direttamente il messaggio di ringraziamento
+    if (log.some(e => e.tipo === 'uscita')) {
+      Array.from(wrap.children).forEach(el => el.style.display = 'none');
+      const btnGroup = document.getElementById('btnOut').closest('.btn-group');
+      if (btnGroup) btnGroup.style.display = 'none';
+      document.getElementById('gpsStatus').style.display = 'none';
+      document.getElementById('sendingIndicator').style.display = 'none';
+      const msg = document.createElement('div');
+      msg.id = 'exitMessage';
+      msg.style.cssText = 'text-align:center;padding:20px 0 8px';
+      msg.innerHTML = `
+        <div style="font-size:40px;margin-bottom:14px">✅</div>
+        <div style="font-size:15px;font-weight:600;color:var(--green);margin-bottom:10px">Uscita registrata con successo</div>
+        <div style="font-size:14px;color:var(--text2);line-height:1.7">Grazie per aver partecipato al nostro evento,<br>riceverai una mail di conferma all'indirizzo indicato.</div>`;
+      wrap.appendChild(msg);
+      return;
+    }
     // Nascondi tutti i campi e i pulsanti
     Array.from(wrap.children).forEach(el => el.style.display = 'none');
     // Mostra banner di blocco
@@ -605,7 +622,7 @@
         <div style="font-size:36px;margin-bottom:12px">🔒</div>
         <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">${nome} ${cognome}</div>
         <div style="font-size:13px;color:var(--text2);line-height:1.6">Questo dispositivo è già stato utilizzato<br>per registrare la presenza oggi.</div>
-        <div style="font-size:12px;color:var(--text3);margin-top:16px;font-family:'DM Mono',monospace">Usa il pulsante qui sotto solo per<br>registrare la tua uscita.</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:16px;font-family:'DM Mono',monospace">Puoi registrare la tua uscita<br>utilizzando il pulsante rosso.</div>
       </div>`;
     wrap.appendChild(banner);
     // Mostra solo il pulsante Uscita e l'indicatore GPS
@@ -625,6 +642,27 @@
         document.getElementById('iscrizioneInput').value = saved.iscrizione || '';
       }
     } catch(e) {}
+  }
+
+  function mostraMessaggioUscita() {
+    const wrap = document.getElementById('input-wrap');
+    // Nascondi tutti gli elementi nel wrap
+    Array.from(wrap.children).forEach(el => el.style.display = 'none');
+    // Nascondi il gruppo pulsanti
+    const btnGroup = document.getElementById('btnOut').closest('.btn-group');
+    if (btnGroup) btnGroup.style.display = 'none';
+    // Nascondi GPS e spinner
+    document.getElementById('gpsStatus').style.display = 'none';
+    document.getElementById('sendingIndicator').style.display = 'none';
+    // Crea e mostra messaggio di ringraziamento
+    const msg = document.createElement('div');
+    msg.id = 'exitMessage';
+    msg.style.cssText = 'text-align:center;padding:20px 0 8px';
+    msg.innerHTML = `
+      <div style="font-size:40px;margin-bottom:14px">✅</div>
+      <div style="font-size:15px;font-weight:600;color:var(--green);margin-bottom:10px">Uscita registrata con successo</div>
+      <div style="font-size:14px;color:var(--text2);line-height:1.7">Grazie per aver partecipato al nostro evento,<br>riceverai una mail di conferma all'indirizzo indicato.</div>`;
+    wrap.appendChild(msg);
   }
 
   function caricaDatiSalvati() {
@@ -778,7 +816,7 @@
         cognome    = (saved && saved.cognome)     || '';
         cf         = (saved && saved.cf)          || '';
         iscrizione = (saved && saved.iscrizione)  || '';
-        email      = '';
+        email      = (saved && saved.email) || '';
       } catch(e) { nome=''; cognome=''; cf=''; iscrizione=''; email=''; }
       if (!nome || !cognome || !cf || !iscrizione) {
         showToast('Dati mancanti. Ricarica la pagina.', 'error');
@@ -797,6 +835,7 @@
       { id: 'cognomeInput',    val: cognome,     msg: 'Il cognome è obbligatorio' },
       { id: 'cfInput',         val: cf,          msg: 'Il codice fiscale è obbligatorio' },
       { id: 'iscrizioneInput', val: iscrizione,  msg: 'Il numero di iscrizione è obbligatorio' },
+      { id: 'emailInput',      val: email,       msg: "L'email è obbligatoria" },
     ];
     let hasError = false;
     fields.forEach(f => {
@@ -844,19 +883,14 @@
       localStorage.setItem(LOG_KEY, JSON.stringify(log));
       renderLog();
       // Salva dati e blocca dispositivo dopo l'ingresso
-      salvaDati(nome, cognome, cf, iscrizione);
+      salvaDati(nome, cognome, cf, iscrizione, email);
       if (tipo === 'ingresso') {
         bloccaDispositivo(nome, cognome);
         showToast('Ingresso registrato ✓', 'success');
         setTimeout(() => mostraBlocco(nome, cognome), 1200);
       } else {
         showToast('Uscita registrata ✓', 'success');
-        document.getElementById('btnOut').disabled = true;
-        document.getElementById('nomeInput').value       = '';
-        document.getElementById('cognomeInput').value    = '';
-        document.getElementById('cfInput').value         = '';
-        document.getElementById('iscrizioneInput').value = '';
-        document.getElementById('emailInput').value      = '';
+        mostraMessaggioUscita();
       }
     } catch(e) {
       showToast('Errore di connessione. Riprova.', 'error');
