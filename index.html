@@ -417,7 +417,7 @@
       <input class="input-field" id="cognomeInput" type="text" placeholder="Cognome *" autocomplete="family-name" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
       <input class="input-field" id="cfInput" type="text" placeholder="Codice Fiscale *" autocomplete="off" autocorrect="off" style="text-transform:uppercase" maxlength="16" oninput="this.style.borderColor='';this.style.background=''">
       <input class="input-field" id="iscrizioneInput" type="text" placeholder="N. iscrizione all'ordine *" autocomplete="off" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
-      <input class="input-field" id="emailInput" type="email" placeholder="Email (otterrai una ricevuta a fine evento)" autocomplete="email" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
+      <input class="input-field" id="emailInput" type="email" placeholder="Email *" autocomplete="email" autocorrect="off" oninput="this.style.borderColor='';this.style.background=''">
 
 
       <label class="remember-label" id="rememberLabel">
@@ -474,10 +474,10 @@
   const EVENTO_NOME      = "CONSIGLIO ORDINE";               // ← nome evento
   const EVENTO_DATA      = "07/05/2026";                     // ← data (gg/mm/aaaa)
   const EVENTO_SEDE      = "via Gaglio, 1 - Agrigento";      // ← sede
-  const EVENTO_INIZIO    = "06:00";                          // ← orario inizio
+  const EVENTO_INIZIO    = "09:00";                          // ← orario inizio
   const EVENTO_FINE      = "21:45";                          // ← orario fine
-  const ORARIO_APERTURA  = "05:30";                          // ← da quando si può firmare l'entrata
-  const ORARIO_LIMITE    = "22:05";                          // ← fino a quando si può firmare l'uscita
+  const ORARIO_APERTURA  = "08:30";                          // ← da quando si può firmare l'entrata
+  const ORARIO_LIMITE    = "21:58";                          // ← fino a quando si può firmare l'uscita
   const ORE_PREVISTE     = 12;                               // ← ore totali previste
   const PERC_MINIMA      = 80;                               // ← % minima per i crediti
   const SEDE_LAT         = 37.360903834498416;               // ← latitudine sede
@@ -587,9 +587,9 @@
     } catch(e) {}
   }
 
-  function salvaDati(nome, cognome, cf, iscrizione) {
+  function salvaDati(nome, cognome, cf, iscrizione, email) {
     try {
-      localStorage.setItem(SAVED_KEY, JSON.stringify({ nome, cognome, cf, iscrizione }));
+      localStorage.setItem(SAVED_KEY, JSON.stringify({ nome, cognome, cf, iscrizione, email }));
     } catch(e) {}
   }
 
@@ -778,7 +778,7 @@
         cognome    = (saved && saved.cognome)     || '';
         cf         = (saved && saved.cf)          || '';
         iscrizione = (saved && saved.iscrizione)  || '';
-        email      = '';
+        email      = (saved && saved.email) || '';
       } catch(e) { nome=''; cognome=''; cf=''; iscrizione=''; email=''; }
       if (!nome || !cognome || !cf || !iscrizione) {
         showToast('Dati mancanti. Ricarica la pagina.', 'error');
@@ -797,6 +797,7 @@
       { id: 'cognomeInput',    val: cognome,     msg: 'Il cognome è obbligatorio' },
       { id: 'cfInput',         val: cf,          msg: 'Il codice fiscale è obbligatorio' },
       { id: 'iscrizioneInput', val: iscrizione,  msg: 'Il numero di iscrizione è obbligatorio' },
+      { id: 'emailInput',      val: email,       msg: "L'email è obbligatoria" },
     ];
     let hasError = false;
     fields.forEach(f => {
@@ -844,7 +845,7 @@
       localStorage.setItem(LOG_KEY, JSON.stringify(log));
       renderLog();
       // Salva dati e blocca dispositivo dopo l'ingresso
-      salvaDati(nome, cognome, cf, iscrizione);
+      salvaDati(nome, cognome, cf, iscrizione, email);
       if (tipo === 'ingresso') {
         bloccaDispositivo(nome, cognome);
         showToast('Ingresso registrato ✓', 'success');
