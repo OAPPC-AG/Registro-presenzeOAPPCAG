@@ -528,6 +528,38 @@
   const configured = SCRIPT_URL !== "INCOLLA_QUI_URL_APPS_SCRIPT";
   if (!configured) document.getElementById('configBanner').style.display = 'block';
 
+  // ── Controllo giorno evento ──
+  (function() {
+    const oggi = new Date();
+    const [gg, mm, aaaa] = EVENTO_DATA.split('/').map(Number);
+    const dataEvento = new Date(aaaa, mm - 1, gg);
+    const sonoNelGiorno =
+      oggi.getFullYear() === dataEvento.getFullYear() &&
+      oggi.getMonth()    === dataEvento.getMonth()    &&
+      oggi.getDate()     === dataEvento.getDate();
+
+    if (!sonoNelGiorno) {
+      document.getElementById('input-wrap').closest('.card').style.display = 'none';
+      document.getElementById('evtName').closest('.card').style.display = 'none';
+
+      const msg = document.createElement('div');
+      msg.className = 'card';
+      msg.style.textAlign = 'center';
+      msg.style.padding   = '32px 20px';
+      msg.innerHTML = `
+        <div style="font-size:40px;margin-bottom:16px">📅</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">
+          Nessun evento in programma oggi
+        </div>
+        <div style="font-size:13px;color:var(--text2);line-height:1.7;font-family:'DM Mono',monospace">
+          La registrazione delle presenze non è attiva.
+        </div>`;
+
+      const mainEl = document.querySelector('main');
+      mainEl.insertBefore(msg, mainEl.firstChild);
+    }
+  })();
+
   document.getElementById('evtName').textContent = EVENTO_NOME;
   document.getElementById('evtMeta').textContent = EVENTO_DATA;
   document.getElementById('evtSede').textContent = '📍 ' + EVENTO_SEDE;
@@ -792,7 +824,7 @@
         const msgs = { 1:'Permesso GPS negato', 2:'Posizione non disponibile', 3:'Timeout GPS' };
         setGps('error', msgs[err.code] || 'Errore GPS');
       },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
     );
   }
 
